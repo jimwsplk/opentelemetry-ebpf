@@ -306,6 +306,8 @@ private:
   /*** TCP DATA ***/
   void handle_tcp_data(message_metadata const &metadata, jb_agent_internal__tcp_data &msg);
 
+  void handle_jmw_sk_info(message_metadata const &metadata, jb_agent_internal__jmw_sk_info &msg);
+
   /////////////////////////////////////////////////////////////////////////
 
   uv_loop_t &loop_;
@@ -337,13 +339,13 @@ private:
   NatHandler nat_handler_;
 
   /* TCP */
-  typedef FixedHash<u64, tcp_socket_entry, tcp_socket_table_max_sockets, u64_hasher> TcpSocketTable;
-  typedef MetricStore<struct tcp_statistics, tcp_socket_table_max_sockets, n_epochs> TcpSocketStatistics;
+  typedef FixedHash<u64, tcp_socket_entry, tcp_socket_table_max_sockets, u64_hasher> TcpSocketTable; //JMWMON
+  typedef MetricStore<struct tcp_statistics, tcp_socket_table_max_sockets, n_epochs> TcpSocketStatistics; //JMWMON
 
   TcpSocketTable tcp_socket_table_;
   bool tcp_socket_table_ever_full_;
   fast_div tslot_;
-  TcpSocketStatistics tcp_socket_stats_;
+  TcpSocketStatistics tcp_socket_stats_; //JMWMON
   u64 tcp_index_to_sk_[tcp_socket_table_max_sockets];
 
   /* UDP */

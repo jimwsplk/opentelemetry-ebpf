@@ -13,6 +13,7 @@ typedef u32 PID;
 #define TGID_FROM_PID_TGID(X) ((TGID)((X) >> 32))
 #define PID_FROM_PID_TGID(X) ((PID)((X)))
 // common operation, use this macro to define _pid and _tgid for kprobes
+#if 0 //JMW why bpf_log if 0s?
 #define GET_PID_TGID                                                                                                           \
   PID_TGID _pid_tgid = bpf_get_current_pid_tgid();                                                                             \
   TGID _tgid = TGID_FROM_PID_TGID(_pid_tgid);                                                                                  \
@@ -20,6 +21,12 @@ typedef u32 PID;
   if (_tgid == 0 || _pid == 0) {                                                                                               \
     bpf_log(ctx, BPF_LOG_INVALID_PID_TGID, _pid_tgid, 0, 0);                                                                   \
   }                                                                                                                            \
+  u64 _cpu = bpf_get_smp_processor_id();
+#endif
+#define GET_PID_TGID                                                                                                           \
+  PID_TGID _pid_tgid = bpf_get_current_pid_tgid();                                                                             \
+  TGID _tgid = TGID_FROM_PID_TGID(_pid_tgid);                                                                                  \
+  PID _pid = PID_FROM_PID_TGID(_pid_tgid);                                                                                     \
   u64 _cpu = bpf_get_smp_processor_id();
 
 typedef u64 TIMESTAMP;

@@ -180,7 +180,7 @@ static void write_to_tcp_stream(
   struct tcp_stream_info_t *strm = pconn->streams + (int)streamtype;
   struct tcp_control_value_t *pctrl = get_tcp_control(pconn);
   if (!pctrl) {
-    bpf_log(ctx, BPF_LOG_UNREACHABLE, 0, 0, 0);
+    bpf_log(ctx, BPF_LOG_UNREACHABLE, 0, 0, 0); //JMW
     return;
   }
   u64 start = pctrl->streams[streamtype].start;

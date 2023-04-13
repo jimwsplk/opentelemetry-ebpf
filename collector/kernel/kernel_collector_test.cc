@@ -250,9 +250,14 @@ protected:
           reschedule = true;
         }
       }
-      if (reschedule) {
-        stop_test_timer_->defer(std::chrono::seconds(1));
-        return;
+
+      //JMW check all_workloads_completed
+      //JMW if this is set to false, and if workload(s) may run long or forever, need a way to kill running workloads, or skip join of their threads
+      if (stop_conditions.all_workloads_completed) {
+        if (remaining_workloads_) {
+          stop_test_timer_->defer(std::chrono::seconds(1));
+          return;
+        }
       }
 
       LOG::trace("stop_test_check() stop_conditions have been met - calling stop_kernel_collector()");
@@ -308,7 +313,9 @@ protected:
         exit(1);
       }
 
+      //JMW
       system(
+          //JMW"exec 1> /tmp/workload-curl-localhost.log 2>&1; echo starting workload; for n in $(seq 1 100); do for m in $(seq 1 100); do curl localhost:28099; sleep .01; done; sleep 1; done; echo workload complete");
           "exec 1> /tmp/workload-curl-localhost.log 2>&1; echo starting workload; for n in $(seq 1 100); do curl localhost:28099; done; echo workload complete");
 
       kill(pid, SIGTERM);
@@ -356,7 +363,8 @@ protected:
   void stop_workloads()
   {
     for (auto &thr : workload_threads_) {
-      if (thr.joinable()) {
+      if (thr.joinable()) { // JMW when would this be false?  If a workload is still running will this return true and follwoing join()
+                            // will block forever?
         thr.join();
       }
     }

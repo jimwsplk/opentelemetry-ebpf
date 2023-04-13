@@ -87,7 +87,8 @@ struct tcp_open_socket_t {
   u64 last_output;
   u64 bytes_received; /* last observed */
   u32 rcv_delivered;
-  u32 padding;
+  //JMWu32 padding; //JMWMON why does bpf compile/probe load fail if this is not commented out?
+  u32 generation; //JMWMON
 #if TCP_STATS_ON_PARENT
   struct sock *parent; /* parent listen socket if accepted, null otherwise */
 #endif
@@ -138,6 +139,7 @@ BPF_HASH(
     struct nf_conn *,
     TABLE_SIZE__SEEN_CONNTRACKS); // Conntracks that we've reported to userspace
 BPF_HASH(tcp_open_sockets, struct sock *, struct tcp_open_socket_t, TABLE_SIZE__TCP_OPEN_SOCKETS); /* information on live sks */
+BPF_HASH(tcp_open_socket_generations, struct sock *, u32, TABLE_SIZE__TCP_OPEN_SOCKETS); //JMWMON
 BPF_HASH(udp_open_sockets, struct sock *, struct udp_open_socket_t, TABLE_SIZE__UDP_OPEN_SOCKETS);
 BPF_HASH(udp_get_port_hash, u64, struct sock *, TABLE_SIZE__UDP_GET_PORT_HASH);
 
@@ -592,7 +594,7 @@ report_rtt_estimator(struct pt_regs *ctx, struct sock *sk, struct tcp_open_socke
     return;
   }
 
-  // adjustment for bytes reported when the connection is closed
+  // adjustment for bytes reported when the connection is closed JMW - what is this for?
   // zero out last two bits to account for this
   if (adjust) {
     bytes_acked &= ~3ull;
@@ -620,7 +622,7 @@ report_rtt_estimator(struct pt_regs *ctx, struct sock *sk, struct tcp_open_socke
 //
 // should be paired with a `perf_submit_agent_internal__new_sock_created`
 // in most circumstances, however we don't do this in the case of already
-// existing sockets.
+// existing sockets. //JMW
 //
 // returns 1 if it added the socket, 0 if it already existed,
 // and -1 if the table is full, broken, or out of memory
@@ -635,12 +637,24 @@ static int add_tcp_open_socket(struct pt_regs *ctx, struct sock *sk, u32 tgid, u
   bpf_trace_printk("add_tcp_open_socket: %llx (tgid=%u)\n", sk, tgid);
 #endif
 
+  u32 generation_to_use = 0;
+  u32 *generation;
+  generation = tcp_open_socket_generations.lookup(&sk);
+  if (generation) {
+    *generation += 1;
+    generation_to_use = *generation;
+  } else {
+    generation_to_use = 1;
+    tcp_open_socket_generations.insert(&sk, &generation_to_use);
+  }
+
   struct tcp_open_socket_t sk_info = {
     .tgid = tgid,
     .last_output = 0, // always do the first reporting
     .rcv_holes = 0,
     .rcv_delivered = 0,
-#if TCP_STATS_ON_PARENT
+    .generation = generation_to_use,
+#if TCP_STATS_ON_PARENT //JMW?
     .parent = parent
 #endif
   };
@@ -651,7 +665,8 @@ static int add_tcp_open_socket(struct pt_regs *ctx, struct sock *sk, u32 tgid, u
     return -1;
   }
 
-  ret = tcp_open_sockets.insert(&sk, &sk_info);
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info.generation, sk_info.tgid, tgid);
+  ret = tcp_open_sockets.insert(&sk, &sk_info); //JMW ONLY tcp_open_sockets.insert
 
   if (ret == -E2BIG || ret == -ENOMEM || ret == -EINVAL) {
 #if DEBUG_TCP_SOCKET_ERRORS
@@ -660,6 +675,8 @@ static int add_tcp_open_socket(struct pt_regs *ctx, struct sock *sk, u32 tgid, u
     bpf_log(ctx, BPF_LOG_TABLE_FULL, BPF_TABLE_TCP_OPEN_SOCKETS, tgid, (u64)sk);
     return -1;
   } else if (ret == -EEXIST) {
+    //JMWMON shouldn't bump generation if we end up here
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info.generation, sk_info.tgid, tgid);
     return 0;
   } else if (ret != 0) {
 #if DEBUG_TCP_SOCKET_ERRORS
@@ -668,6 +685,7 @@ static int add_tcp_open_socket(struct pt_regs *ctx, struct sock *sk, u32 tgid, u
     bpf_log(ctx, BPF_LOG_TABLE_BAD_INSERT, BPF_TABLE_TCP_OPEN_SOCKETS, tgid, abs_val(ret));
     return -1;
   }
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info.generation, sk_info.tgid, tgid);
   return 1;
 }
 
@@ -678,6 +696,7 @@ static void remove_tcp_open_socket(struct pt_regs *ctx, struct sock *sk)
   if (!sk_info_p) {
     return;
   }
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
 
 #if TRACE_TCP_SOCKETS
   bpf_trace_printk("remove_tcp_open_socket: %llx\n", sk);
@@ -687,6 +706,7 @@ static void remove_tcp_open_socket(struct pt_regs *ctx, struct sock *sk)
   // successful.
   struct tcp_open_socket_t sk_info = *sk_info_p;
 
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
   // do some cleanup from our hashmap
   int ret = tcp_open_sockets.delete(&sk);
   if (ret != 0) {
@@ -826,6 +846,9 @@ static struct tcp_open_socket_t *tcp_existing_hack(struct pt_regs *ctx, struct s
   }
 #endif
   struct tcp_open_socket_t *sk_info_p = tcp_open_sockets.lookup(&sk);
+  if (sk_info_p) {
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info_p->generation, sk_info_p->tgid, _tgid);
+  }
   return sk_info_p;
 }
 #endif
@@ -837,6 +860,7 @@ static void restart_tcp_socket(struct pt_regs *ctx, TIMESTAMP now, struct sock *
   GET_PID_TGID;
 
   // Connect to af_unspec starts a new span
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
   remove_tcp_open_socket(ctx, sk);
 
   // add an entry to our hash map
@@ -876,6 +900,8 @@ int on_tcp_connect(struct pt_regs *ctx, struct sock *sk)
 
 #endif
   }
+  GET_PID_TGID;
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
 
   u64 now = get_timestamp();
   int tx_rx = 1;
@@ -919,6 +945,9 @@ int on_inet_csk_listen_start(struct pt_regs *ctx, struct sock *sk)
 #endif
   }
 
+  GET_PID_TGID;
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
+
   u64 now = get_timestamp();
   int tx_rx = 2; // this is the listener
   if (family == AF_INET) {
@@ -948,6 +977,8 @@ static void tcp_lifetime_hack(struct pt_regs *ctx, struct sock *sk)
     u64 now = get_timestamp();
     perf_submit_agent_internal__report_debug_event(ctx, now, TCP_LIFETIME_HACK_CODE, (u64)sk, 0, 0, 0);
 #endif // REPORT_DEBUG_EVENTS
+    GET_PID_TGID;
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
     remove_tcp_open_socket(ctx, sk);
   }
 }
@@ -1011,11 +1042,14 @@ int on_inet_csk_accept(struct pt_regs *ctx, struct sock *sk, int flags, int *err
   sk_info = tcp_open_sockets.lookup(&sk);
   if (!sk_info) {
 
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
     sk_info = tcp_existing_hack(ctx, sk);
     if (sk_info == NULL) {
+      perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
       return 0;
     }
   }
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
 #endif
 #endif
 
@@ -1029,7 +1063,7 @@ int on_inet_csk_accept(struct pt_regs *ctx, struct sock *sk, int flags, int *err
   return 0;
 }
 
-int onret_inet_csk_accept(struct pt_regs *ctx)
+int onret_inet_csk_accept(struct pt_regs *ctx) //JMW
 {
   GET_PID_TGID;
 
@@ -1061,6 +1095,7 @@ int onret_inet_csk_accept(struct pt_regs *ctx)
   if (args == NULL) {
     // Race condition where we might have been inside an accept when the probe
     // was inserted, ignore
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)newsk, (u32)__LINE__, 0, 0, _tgid);
     return 0;
   }
 
@@ -1088,6 +1123,7 @@ int onret_inet_csk_accept(struct pt_regs *ctx)
     DELETE_ARGS(on_inet_csk_accept);
     return 0;
   } else {
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)newsk, (u32)__LINE__, 0, 0, _tgid);
     // no log here because we already had another log inside add_tcp_open_socket for this
     DELETE_ARGS(on_inet_csk_accept);
     return 0;
@@ -1304,6 +1340,7 @@ static void remove_udp_open_socket(struct pt_regs *ctx, struct sock *sk)
   // successful.
   struct udp_open_socket_t sk_info = *sk_info_p;
 
+  //JMWTUE same race?
   int ret = udp_open_sockets.delete(&sk);
   if (ret != 0) {
     // Another thread must have already deleted the entry for this sk.
@@ -1458,13 +1495,16 @@ int onret_udp_v46_get_port(struct pt_regs *ctx)
 static inline void remove_open_socket(struct pt_regs *ctx, struct sock *sk)
 {
   {
+    GET_PID_TGID;
     // TCP(v4/v6) Socket?
     struct tcp_open_socket_t *tcp_sk_info;
     tcp_sk_info = tcp_open_sockets.lookup(&sk);
     if (tcp_sk_info) {
+      perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, tcp_sk_info->generation, tcp_sk_info->tgid, _tgid);
       remove_tcp_open_socket(ctx, sk);
       return;
     }
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
   }
   {
     // UDP(v4/v6) Socket?
@@ -1478,10 +1518,13 @@ static inline void remove_open_socket(struct pt_regs *ctx, struct sock *sk)
   // Must be some other kind of socket we don't yet care about
 }
 
+//JMWMONNEXT look at linux code to see from where and when this is called
 // --- security_sk_free ----------------------------------------------------
 // This is where final socket destruction happens for all socket types
 int on_security_sk_free(struct pt_regs *ctx, struct sock *sk)
 {
+  GET_PID_TGID;
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
   remove_open_socket(ctx, sk);
   return 0;
 }
@@ -1490,6 +1533,7 @@ BEGIN_DECLARE_SAVED_ARGS(inet_release)
 struct sock *sk;
 END_DECLARE_SAVED_ARGS(inet_release)
 
+//JMWMONNEXT look at linux code to see from where and when this is called AND why is this needed in addition to security_sk_free, above, which is for "final socket destruction"?
 int on_inet_release(struct pt_regs *ctx, struct socket *sock)
 {
   GET_PID_TGID;
@@ -1508,6 +1552,7 @@ int on_inet_release(struct pt_regs *ctx, struct socket *sock)
   return 0;
 }
 
+//JMWMONNEXT look at linux code to see from where and when this is called
 int onret_inet_release(struct pt_regs *ctx)
 {
   GET_PID_TGID;
@@ -1522,6 +1567,8 @@ int onret_inet_release(struct pt_regs *ctx)
   DELETE_ARGS(inet_release);
 
   if (sk) {
+    //JMWTOOMANY???
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
     remove_open_socket(ctx, sk);
   }
 
@@ -1531,11 +1578,16 @@ int onret_inet_release(struct pt_regs *ctx)
 // TCP reset
 static void handle_tcp_reset(struct pt_regs *ctx, struct sock *sk, u8 is_rx)
 {
-  if (!tcp_open_sockets.lookup(&sk)) {
+  GET_PID_TGID;
+  struct tcp_open_socket_t *sk_info;
+  sk_info = tcp_open_sockets.lookup(&sk);
+  if (!sk_info) {
     // don't send an event on sockets we never notified userspace about
     // bpf_trace_printk("handle_tcp_reset: no socket\n");
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
     return;
   }
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
 
   // bpf_trace_printk("handle_tcp_reset: perf_submit_agent_internal__tcp_reset\n");
   u64 now = get_timestamp();
@@ -1878,6 +1930,7 @@ static void report_rtt_estimator_if_time(struct pt_regs *ctx, struct sock *sk, s
 
 int on_tcp_rtt_estimator(struct pt_regs *ctx, struct sock *sk)
 {
+  GET_PID_TGID;
   struct tcp_open_socket_t *sk_info; /* for filtering */
 
   if (sk->sk_state != TCP_ESTABLISHED) {
@@ -1888,9 +1941,11 @@ int on_tcp_rtt_estimator(struct pt_regs *ctx, struct sock *sk)
   if (!sk_info) {
     // Okay if socket is not yet tracked because it could be in kernel accept
     // queue but not returned by inet_csk_accept yet.
+    //JMWWAYTOOMANY perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
     return 0;
   }
 
+  //JMWWAYTOOMANY perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
   report_rtt_estimator_if_time(ctx, sk, sk_info);
 
   return 0;
@@ -1898,14 +1953,17 @@ int on_tcp_rtt_estimator(struct pt_regs *ctx, struct sock *sk)
 
 int on_tcp_rcv_established(struct pt_regs *ctx, struct sock *sk, struct sk_buff *skb)
 {
+  GET_PID_TGID;
   struct tcp_open_socket_t *sk_info;
   sk_info = tcp_open_sockets.lookup(&sk);
   if (!sk_info) {
     // Okay if socket is not yet tracked because it could be in kernel accept
     // queue but not returned by inet_csk_accept yet.
+    //JMWWAYTOOMANY perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
     return 0;
   }
 
+  //JMWWAYTOOMANY perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
   int ret;
   u64 bytes_received = 0;
   ret = bpf_probe_read(&bytes_received, sizeof(bytes_received), &tcp_sk(sk)->bytes_received);
@@ -1935,9 +1993,12 @@ int on_tcp_event_data_recv(struct pt_regs *ctx, struct sock *sk, struct sk_buff 
   if (!sk_info) {
     // Okay if socket is not yet tracked because it could be in kernel accept
     // queue but not returned by inet_csk_accept yet.
+    GET_PID_TGID;
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
     return 0;
   }
 
+  //JMWWAYTOOMANY perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
   int ret;
   u64 bytes_received = 0;
   ret = bpf_probe_read(&bytes_received, sizeof(bytes_received), &tcp_sk(sk)->bytes_received);
@@ -1963,11 +2024,16 @@ static void handle_syn_timeout(struct pt_regs *ctx, struct sock *sk)
     return;
   }
 
-  if (!tcp_open_sockets.lookup(&sk)) {
+  GET_PID_TGID;
+  struct tcp_open_socket_t *sk_info;
+  sk_info = tcp_open_sockets.lookup(&sk);
+  if (!sk_info) {
     // don't send a retransmit event on sockets we never notified userspace about
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
     return;
   }
 
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
   // okay, can send an event
   u64 now = get_timestamp();
   perf_submit_agent_internal__tcp_syn_timeout(ctx, now, (__u64)sk);
@@ -2005,13 +2071,16 @@ int on_tcp_syn_ack_timeout(
   struct sock *sk = NULL;
   bpf_probe_read(&sk, sizeof(sk), &(req->sk));
 
+  GET_PID_TGID;
   struct tcp_open_socket_t *sk_info;
   sk_info = tcp_open_sockets.lookup(&sk);
   if (!sk_info) {
     //  don't send a retransmit event on sockets we never notified userspace about
+    perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, 0, 0, _tgid);
     return 0;
   }
 
+  perf_submit_agent_internal__jmw_sk_info(ctx, get_timestamp(), (u64)sk, (u32)__LINE__, sk_info->generation, sk_info->tgid, _tgid);
   handle_syn_timeout(ctx, sk_info->parent);
 #else
   handle_syn_timeout(ctx, (struct sock *)req->rsk_listener);

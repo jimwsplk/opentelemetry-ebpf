@@ -5,6 +5,7 @@
 #include <generated/ebpf_net/ingest/meta.h>
 #include <jitbuf/jb.h>
 
+#include <util/error_handling.h>
 #include <util/json_converter.h>
 
 namespace channel {
@@ -25,6 +26,7 @@ std::error_code TestChannel::send(const u8 *data, int size)
       auto rpc = reinterpret_cast<jb_rpc const *>(data + sizeof(u64)); // + sizeof(u64) to skip past timestamp
       LOG::trace("TestChannel::send() rpc: rpc_id {} size {}", rpc->rpc_id, rpc->size);
 
+      //JMWbinary_messages_.emplace_back(data, data + size);
       binary_messages_.emplace_back(data, data + size);
 
       std::stringstream ss;
@@ -44,10 +46,12 @@ std::error_code TestChannel::send(const u8 *data, int size)
         nlohmann::json const objects = nlohmann::json::parse(str);
         for (auto const &object : objects) {
           ++message_counts_[object["name"]];
+          //JMW json_messages_.push_back(object);
           json_messages_.push_back(object);
           if (sent_msg_cb_) {
             sent_msg_cb_(object);
           }
+          ASSUME(object["name"] != "bpf_log").else_log("JMW got bpf_log {}", str);
         }
       }
     } break;

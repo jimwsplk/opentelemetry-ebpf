@@ -23,12 +23,12 @@ SocketProber::SocketProber(
     : log_(log)
 {
   // END
-  // NOTE: Covers all protocols
-  probe_handler.start_probe(bpf_module, "on_security_sk_free", "security_sk_free");
+  // NOTE: Covers all protocols //JMW
+  probe_handler.start_probe(bpf_module, "on_security_sk_free", "security_sk_free"); //JMW
 
-  // inet END
-  probe_handler.start_probe(bpf_module, "on_inet_release", "inet_release");
-  probe_handler.start_kretprobe(bpf_module, "onret_inet_release", "inet_release");
+  // inet END //JMW
+  probe_handler.start_probe(bpf_module, "on_inet_release", "inet_release"); //JMW
+  probe_handler.start_kretprobe(bpf_module, "onret_inet_release", "inet_release"); //JMW
 
   // CHANGE OF STATE
   probe_handler.start_probe(bpf_module, "on_tcp_connect", "tcp_connect");

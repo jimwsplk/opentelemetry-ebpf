@@ -105,6 +105,7 @@ BufferedPoller::BufferedPoller(
     add_handler<bpf_log_message_metadata, &BufferedPoller::handle_bpf_log>();
     add_handler<stack_trace_message_metadata, &BufferedPoller::handle_stack_trace>();
     add_handler<tcp_data_message_metadata, &BufferedPoller::handle_tcp_data>();
+    add_handler<jmw_sk_info_message_metadata, &BufferedPoller::handle_jmw_sk_info>();
   }
 
   // Create a tcp data handler for the tcp_data message
@@ -683,6 +684,8 @@ void BufferedPoller::handle_rtt_estimator(message_metadata const &metadata, jb_a
 {
   auto pos = tcp_socket_table_.find(msg.sk);
   if (pos.index == tcp_socket_table_.invalid) {
+    //JMWMON do we get here?  if reused sk is deleted twice in ebpf code in 'wrong' order, potentially losing telemetry?
+    //JMWMON is this the only place socket stats are gathered?
     if (!tcp_socket_table_ever_full_ && all_probes_loaded_) {
       LOG::debug_in(AgentLogKind::TCP, "handle_rtt_estimator: rtt_estimator on unknown socket sk={:x}", msg.sk);
     }
@@ -734,7 +737,7 @@ void BufferedPoller::handle_rtt_estimator(message_metadata const &metadata, jb_a
   /* find the statistics, and ask it to enqueue */
   auto &stats = tcp_socket_stats_.lookup(pos.index, metadata.timestamp, true).second;
 
-  /* if stats were invalid, reset the values */
+  /* if stats were invalid, reset the values */ //JMW?
   if (!stats.valid) {
     stats.diff_bytes_acked = diff_bytes_acked;
     stats.diff_delivered = diff_delivered;
@@ -1259,9 +1262,12 @@ void BufferedPoller::handle_bpf_log(message_metadata const &metadata, jb_agent_i
 {
   // eventually, pass this to server using individual error messages
   // and turn this into LOG::debug_in(AgentLogKind::BPF,...)
+  // JMW how does this work?  see collector/kernel/bpf_preprocess.py
   auto const filelineid = msg.filelineid;
   auto const linenumber = g_bpf_debug_line_info[filelineid];
   std::string_view const filename = g_bpf_debug_file_info[filelineid];
+
+  LOG::error("JMW BufferedPoller::handle_bpf_log() file={} line={}", filename, linenumber);
 
   writer_.bpf_log(jb_blob{filename}, linenumber, msg.code, msg.arg0, msg.arg1, msg.arg2);
 }
@@ -1310,6 +1316,9 @@ void BufferedPoller::handle_tcp_data(message_metadata const &metadata, jb_agent_
       (STREAM_TYPE)msg.stream_type,
       (CLIENT_SERVER_TYPE)msg.client_server);
 }
+
+void BufferedPoller::handle_jmw_sk_info(message_metadata const &metadata, jb_agent_internal__jmw_sk_info &msg)
+{}
 
 void BufferedPoller::set_all_probes_loaded()
 {

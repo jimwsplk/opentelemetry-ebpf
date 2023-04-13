@@ -280,6 +280,15 @@ app agent_internal {
       1: u64 sk
       2: u8 is_rx
     }
+    29: log jmw_sk_info {
+      description "JMW"
+      severity 0
+      1: u64 sk
+      2: u32 line
+      3: u32 generation
+      4: u32 sk_buff_tgid
+      5: u32 tgid
+    }
   }
 } /* app agent_internal */
 
