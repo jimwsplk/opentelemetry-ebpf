@@ -1,0 +1,26 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "http-test-server.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "http-test-server.name" . }}
+    helm.sh/chart: {{ include "http-test-server.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ default 8080 .Values.ports.incoming }}
+      targetPort: incoming
+      protocol: TCP
+      name: incoming
+    - port: {{ default 8000 .Values.ports.healthcheck }}
+      targetPort: healthcheck
+      protocol: TCP
+      name: healthcheck
+  selector:
+    app.kubernetes.io/name: {{ include "http-test-server.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}

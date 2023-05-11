@@ -1,0 +1,11 @@
+2069% pwd
+/home/jmw/work/jmwfmj/dev
+jmw-XPS13-9310:jmw-~/work/jmwfmj/dev [wfmj]() 
+2070% ll
+total 8
+drwxrwxr-x 2 jmw jmw 4096 Jun 12 09:48 ./
+drwxrwxr-x 4 jmw jmw 4096 Jun  5 13:52 ../
+lrwxrwxrwx 1 jmw jmw   28 Jun 12 09:48 benv -> ../opentelemetry-ebpf/dev/benv
+lrwxrwxrwx 1 jmw jmw   39 Jun 12 09:47 benv-alias.sh -> ../opentelemetry-ebpf/dev/benv-alias.sh
+lrwxrwxrwx 1 jmw jmw   39 Jun 12 09:48 benv-build.sh -> ../opentelemetry-ebpf/dev/benv-build.sh*
+

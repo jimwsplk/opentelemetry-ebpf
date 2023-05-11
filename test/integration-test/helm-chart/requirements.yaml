@@ -1,0 +1,16 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+dependencies:
+  - name: http-200-test-server
+    repository: file://./http-200-test-server
+    version: 0.1.0
+  - name: http-404-test-server
+    repository: file://./http-404-test-server
+    version: 0.1.0
+  - name: http-500-test-server
+    repository: file://./http-500-test-server
+    version: 0.1.0
+  - name: http-test-client
+    repository: file://./http-test-client
+    version: 0.1.0

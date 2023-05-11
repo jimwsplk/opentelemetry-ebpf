@@ -1,0 +1,52 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ include "http-test-client.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "http-test-client.name" . }}
+    helm.sh/chart: {{ include "http-test-client.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "http-test-client.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "http-test-client.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ default "Always" .Values.image.pullPolicy }}
+          args:
+            - "200"
+            - "404"
+            - "500"
+          env:
+            - name: "HEALTH_CHECK_PORT"
+              value: "{{ default 8000 .Values.ports.healthcheck }}"
+          ports:
+            - name: healthcheck
+              containerPort: {{ default 8000 .Values.ports.healthcheck }}
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 20
+            tcpSocket:
+              port: {{ default 8000 .Values.ports.healthcheck }}
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 20
+            tcpSocket:
+              port: {{ default 8000 .Values.ports.healthcheck }}
+          resources:
+            requests:
+              memory: 128M

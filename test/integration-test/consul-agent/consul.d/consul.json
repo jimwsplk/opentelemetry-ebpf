@@ -1,0 +1,6 @@
+{
+  "enable_debug": false,
+  "enable_syslog": false,
+  "ui":false,
+  "disable_remote_exec": true
+}

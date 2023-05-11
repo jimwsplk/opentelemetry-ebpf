@@ -1,0 +1,29 @@
+http {
+  server {
+    listen 51HTTP_RESPONSE_CODE;
+
+    sendfile on;
+    tcp_nopush on;
+
+    root /srv/data;
+    index index.html index.htm index.txt index;
+
+    location /get {
+      return HTTP_RESPONSE_CODE;
+    }
+  }
+
+  charset utf-8;
+
+  access_log /srv/logs/access.log combined;
+}
+
+error_log /srv/logs/error.log info;
+
+daemon off;
+worker_processes 2;
+user root;
+events {
+  use epoll;
+  worker_connections 128;
+}

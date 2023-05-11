@@ -1,0 +1,22 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+http-200-test-server:
+  image:
+    repository: 966881513036.dkr.ecr.us-east-1.amazonaws.com/prd/http-test-server
+    tag: 20190923_134416-mjuchem-b4632a87
+
+http-404-test-server:
+  image:
+    repository: 966881513036.dkr.ecr.us-east-1.amazonaws.com/prd/http-test-server
+    tag: 20190923_134416-mjuchem-b4632a87
+
+http-500-test-server:
+  image:
+    repository: 966881513036.dkr.ecr.us-east-1.amazonaws.com/prd/http-test-server
+    tag: 20190923_134416-mjuchem-b4632a87
+
+http-test-client:
+  image:
+    repository: 966881513036.dkr.ecr.us-east-1.amazonaws.com/prd/http-test-client
+    tag: 20190923_145146-mjuchem-828478dd

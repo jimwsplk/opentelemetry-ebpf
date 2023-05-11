@@ -1,0 +1,87 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            0a:2e:0f:79:ec:22:92:c3:c1:df:1d:7c:0a:54:f5:bd
+    Signature Algorithm: sha256WithRSAEncryption
+        Issuer: CN=Flowtune CA
+        Validity
+            Not Before: Oct 13 01:42:15 2017 GMT
+            Not After : Oct 11 01:42:15 2027 GMT
+        Subject: CN=demo-server
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:da:8e:e9:fb:73:9a:64:77:54:1e:7f:df:bb:95:
+                    b5:31:c5:01:57:fa:47:7b:48:78:5b:78:26:eb:c9:
+                    c4:8c:ec:da:15:eb:62:0a:4b:46:30:6f:49:64:9e:
+                    72:82:e3:98:0e:52:e6:69:90:ef:f5:49:9d:08:67:
+                    39:c8:aa:d0:d9:10:16:3b:b5:c5:ac:90:ea:27:b7:
+                    10:20:87:17:16:07:91:d2:15:ba:23:79:67:65:ce:
+                    29:dc:0d:e8:08:44:4e:a0:3e:ac:20:a0:20:44:90:
+                    5a:e8:67:a2:2b:6d:ec:59:6c:8f:34:54:e4:fe:01:
+                    f6:c6:7a:66:27:2a:e7:04:29:a4:7b:15:d8:41:82:
+                    5c:ee:fc:b7:4e:18:e9:4e:0e:78:87:52:03:82:fa:
+                    44:72:00:ab:97:90:b6:f5:f1:5a:69:71:7f:24:d4:
+                    84:2e:1c:b3:19:2c:af:e6:f5:93:20:a3:3d:d9:12:
+                    fa:56:96:47:b7:93:c9:77:41:24:a9:54:ce:c4:c9:
+                    ab:82:d2:18:d3:db:3f:4c:29:0d:98:c1:21:08:98:
+                    1f:01:84:b4:53:17:d8:71:05:c3:8d:f8:eb:37:67:
+                    d0:79:5b:b3:f8:d9:10:f5:85:69:b7:70:76:6c:b4:
+                    11:fd:bb:7a:e3:f9:fb:92:be:69:13:92:66:31:b7:
+                    4e:75
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            X509v3 Subject Key Identifier: 
+                11:F9:A9:5C:6B:F6:D4:BF:9F:27:0C:4E:D1:87:B3:16:31:55:B4:A8
+            X509v3 Authority Key Identifier: 
+                keyid:44:39:71:5A:60:7B:8B:83:A6:6A:6B:DC:1D:96:30:7D:31:DD:E8:1C
+                DirName:/CN=Flowtune CA
+                serial:B7:F1:B5:FE:E6:17:6D:CC
+
+            X509v3 Extended Key Usage: 
+                TLS Web Server Authentication
+            X509v3 Key Usage: 
+                Digital Signature, Key Encipherment
+            X509v3 Subject Alternative Name: 
+                DNS:demo-server
+    Signature Algorithm: sha256WithRSAEncryption
+         b1:d2:24:d3:a4:4a:55:04:c3:2e:23:12:5a:57:5f:3e:a7:ca:
+         ea:45:70:85:de:7b:8d:da:7a:30:3b:d1:64:fe:07:af:c5:38:
+         e0:df:67:29:05:d8:19:b5:05:0a:eb:3e:39:03:59:d7:ab:e3:
+         24:51:68:e8:5f:b2:10:84:7e:8e:24:24:f4:0e:cd:6f:eb:a8:
+         1a:20:00:52:98:dd:1e:d7:41:a1:2b:0b:81:11:44:bb:f7:10:
+         20:29:73:64:a8:89:44:d4:e4:7f:cf:78:9d:7d:c2:df:87:95:
+         d5:fa:fe:2e:45:45:6f:06:9a:0e:bf:d0:f9:28:82:ce:a3:6a:
+         75:d8:63:4c:4f:df:a0:c0:31:6c:22:93:03:09:1e:5b:9b:8b:
+         8a:ae:de:35:22:64:11:51:68:1a:53:9b:77:80:51:3e:26:5f:
+         98:0b:7b:21:2a:41:fa:2b:91:c6:7d:09:9f:54:04:fe:73:2b:
+         3d:fc:a6:ec:96:7e:a6:5e:92:c2:f4:ca:54:ae:99:a8:0d:7f:
+         d7:19:39:65:2c:b0:85:2f:1e:15:3a:73:5c:d8:51:0c:df:e9:
+         7c:5f:53:22:02:6a:00:6b:2b:93:aa:1e:cd:24:7f:20:17:7b:
+         5c:54:b8:23:c0:f7:52:99:8f:7c:09:44:07:5c:b5:52:80:e5:
+         71:e2:5e:77
+-----BEGIN CERTIFICATE-----
+MIIDZjCCAk6gAwIBAgIQCi4PeewiksPB3x18ClT1vTANBgkqhkiG9w0BAQsFADAW
+MRQwEgYDVQQDDAtGbG93dHVuZSBDQTAeFw0xNzEwMTMwMTQyMTVaFw0yNzEwMTEw
+MTQyMTVaMBYxFDASBgNVBAMMC2RlbW8tc2VydmVyMIIBIjANBgkqhkiG9w0BAQEF
+AAOCAQ8AMIIBCgKCAQEA2o7p+3OaZHdUHn/fu5W1McUBV/pHe0h4W3gm68nEjOza
+FetiCktGMG9JZJ5yguOYDlLmaZDv9UmdCGc5yKrQ2RAWO7XFrJDqJ7cQIIcXFgeR
+0hW6I3lnZc4p3A3oCEROoD6sIKAgRJBa6GeiK23sWWyPNFTk/gH2xnpmJyrnBCmk
+exXYQYJc7vy3ThjpTg54h1IDgvpEcgCrl5C29fFaaXF/JNSELhyzGSyv5vWTIKM9
+2RL6VpZHt5PJd0EkqVTOxMmrgtIY09s/TCkNmMEhCJgfAYS0UxfYcQXDjfjrN2fQ
+eVuz+NkQ9YVpt3B2bLQR/bt64/n7kr5pE5JmMbdOdQIDAQABo4GvMIGsMAkGA1Ud
+EwQCMAAwHQYDVR0OBBYEFBH5qVxr9tS/nycMTtGHsxYxVbSoMEYGA1UdIwQ/MD2A
+FEQ5cVpge4uDpmpr3B2WMH0x3egcoRqkGDAWMRQwEgYDVQQDDAtGbG93dHVuZSBD
+QYIJALfxtf7mF23MMBMGA1UdJQQMMAoGCCsGAQUFBwMBMAsGA1UdDwQEAwIFoDAW
+BgNVHREEDzANggtkZW1vLXNlcnZlcjANBgkqhkiG9w0BAQsFAAOCAQEAsdIk06RK
+VQTDLiMSWldfPqfK6kVwhd57jdp6MDvRZP4Hr8U44N9nKQXYGbUFCus+OQNZ16vj
+JFFo6F+yEIR+jiQk9A7Nb+uoGiAAUpjdHtdBoSsLgRFEu/cQIClzZKiJRNTkf894
+nX3C34eV1fr+LkVFbwaaDr/Q+SiCzqNqddhjTE/foMAxbCKTAwkeW5uLiq7eNSJk
+EVFoGlObd4BRPiZfmAt7ISpB+iuRxn0Jn1QE/nMrPfym7JZ+pl6SwvTKVK6ZqA1/
+1xk5ZSywhS8eFTpzXNhRDN/pfF9TIgJqAGsrk6oezSR/IBd7XFS4I8D3UpmPfAlE
+B1y1UoDlceJedw==
+-----END CERTIFICATE-----
