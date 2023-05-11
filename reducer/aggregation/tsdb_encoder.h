@@ -101,7 +101,7 @@ private:
     otlp_grpc_formatter_->set_aggregation(aggregation);
     otlp_grpc_formatter_->set_labels(labels);
     otlp_grpc_formatter_->assign_label(std::string_view(kProductIdDimName), std::string_view(kProductIdDimValue));
-    write_metrics(metrics, writer, *otlp_grpc_formatter_, disabled_metrics_);
+    write_metrics(metrics, writer, *otlp_grpc_formatter_, disabled_metrics_); // JMW2
   }
 
   void encode_and_write_p_latencies(const std::string &proto, const PercentileLatencies::LatencyAccumulator &accum);

@@ -21,7 +21,7 @@ void TsdbEncoder::operator()(
     if (otlp_metric_writer_) {
       NodeLabels k[2] = {span.node1(), span.node2()};
 
-      encode_and_write_otlp_grpc(otlp_metric_writer_, "id_id", {k[reverse_], k[1 - reverse_]}, metrics);
+      encode_and_write_otlp_grpc(otlp_metric_writer_, "id_id", {k[reverse_], k[1 - reverse_]}, metrics); // JMW1
     }
   }
 
@@ -55,7 +55,7 @@ void TsdbEncoder::operator()(
       NodeLabels k[2] = {az_node.az(), az_node.node()};
 
       encode_and_write_otlp_grpc(
-          otlp_metric_writer_, (reverse_ == 0) ? "az_id" : "id_az", {k[reverse_], k[1 - reverse_]}, metrics);
+          otlp_metric_writer_, (reverse_ == 0) ? "az_id" : "id_az", {k[reverse_], k[1 - reverse_]}, metrics); // JMW1
     }
   }
 }
@@ -76,6 +76,6 @@ void TsdbEncoder::operator()(
   if (otlp_metric_writer_) {
     NodeLabels k[2] = {az_az.az1(), az_az.az2()};
 
-    encode_and_write_otlp_grpc(otlp_metric_writer_, "az_az", {k[0], k[1]}, metrics);
+    encode_and_write_otlp_grpc(otlp_metric_writer_, "az_az", {k[0], k[1]}, metrics); // JMW1
   }
 }

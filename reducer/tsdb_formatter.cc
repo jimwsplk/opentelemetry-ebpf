@@ -99,7 +99,7 @@ void TsdbFormatter::write(std::string_view metric_name, value_t value, Publisher
 
 void TsdbFormatter::write(MetricInfo const &metric, value_t value, Publisher::WriterPtr const &writer)
 {
-  format(
+  format( // JMW5
       metric,
       value,
       aggregation_,

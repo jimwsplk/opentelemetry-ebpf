@@ -39,12 +39,12 @@ OtlpGrpcPublisher::Writer::~Writer() {}
 
 void OtlpGrpcPublisher::Writer::write(ExportLogsServiceRequest &request)
 {
-  logs_client_.AsyncExport(request);
+  logs_client_.AsyncExport(request); // JMW8
 }
 
 void OtlpGrpcPublisher::Writer::write(ExportMetricsServiceRequest &request)
 {
-  metrics_client_.AsyncExport(request);
+  metrics_client_.AsyncExport(request); // JMW8
 }
 
 void OtlpGrpcPublisher::Writer::flush()

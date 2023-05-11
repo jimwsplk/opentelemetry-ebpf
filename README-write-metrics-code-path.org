@@ -1,0 +1,127 @@
+* reducer/aggregation/agg_core.cc
+void AggCore::write_metrics()
+** JMW0 reducer/aggregation/agg_core.cc
+void AggCore::write_standard_metrics(u64 t)
+{
+  ...
+  TsdbEncoder encoder(
+      metric_writers_,
+      metrics_tsdb_format_,
+      otlp_metric_writer_,
+      std::chrono::nanoseconds(metric_timestamp),
+      id_id_enabled_,
+      az_id_enabled_,
+      disabled_metrics_);
+
+  auto az_az_writer = [&encoder, this](auto &&...args) {
+    encoder(args...);
+    if (this->p_latencies_ != nullptr) {
+      this->p_latencies_->operator()(args...);
+    }
+  };
+
+#define WRITE_METRICS(A_B, B_A)                                                                                                \
+  index_.agg_root.A_B##_foreach(t, encoder);                                                                                   \
+  encoder.set_reverse(1);                                                                                                      \
+  index_.agg_root.B_A##_foreach(t, encoder);                                                                                   \
+  encoder.set_reverse(0);                                                                                                      \
+                                                                                                                               \
+  index_.node_node.A_B##_foreach(t, encoder);                                                                                  \
+  encoder.set_reverse(1);                                                                                                      \
+  index_.node_node.B_A##_foreach(t, encoder);                                                                                  \
+  encoder.set_reverse(0);                                                                                                      \
+                                                                                                                               \
+  index_.az_node.A_B##_foreach(t, encoder);                                                                                    \
+  encoder.set_reverse(1);                                                                                                      \
+  index_.az_node.B_A##_foreach(t, encoder);                                                                                    \
+  encoder.set_reverse(0);                                                                                                      \
+                                                                                                                               \
+  index_.az_az.A_B##_foreach(t, az_az_writer);
+
+  // JMW0
+  WRITE_METRICS(tcp_a_to_b, tcp_b_to_a);
+  WRITE_METRICS(udp_a_to_b, udp_b_to_a);
+  WRITE_METRICS(http_a_to_b, http_b_to_a);
+  WRITE_METRICS(dns_a_to_b, dns_b_to_a);
+#undef WRITE_METRICS
+  ...
+  encoder.flush();
+*** JMW0 reducer/aggregation/tsdb_encoder.cc
+// JMW0
+// TCP
+#define METRICS tcp_metrics
+#define A_B_UPDATE tcp_a_to_b_update
+#define B_A_UPDATE tcp_b_to_a_update
+*#include "tsdb_encoder.inl"*
+**** JMW1 reducer/aggregation/tsdb_encoder.inl
+void TsdbEncoder::operator()(
+    u64 t, ::ebpf_net::aggregation::weak_refs::node_node &span, ::ebpf_net::metrics::METRICS &metrics, u64 interval)
+{
+  if (id_id_enabled_) {
+    ...
+    if (otlp_metric_writer_) {
+      ...
+      encode_and_write_otlp_grpc(otlp_metric_writer_, "id_id", {k[reverse_], k[1 - reverse_]}, metrics); // JMW1
+...
+same for az_node/az_id_enabled_ and az_az/az_az_enabled_
+***** JMW2 reducer/aggregation/tsdb_encoder.h
+// encode_and_write for exporting metrics with OTLP (push) style publisher writers
+template <typename Metrics>
+void encode_and_write_otlp_grpc(
+    Publisher::WriterPtr &writer, std::string_view aggregation, const FlowLabels &labels, Metrics const &metrics)
+{
+  otlp_grpc_formatter_->set_aggregation(aggregation);
+  otlp_grpc_formatter_->set_labels(labels);
+  otlp_grpc_formatter_->assign_label(std::string_view(kProductIdDimName), std::string_view(kProductIdDimValue));
+  write_metrics(metrics, writer, *otlp_grpc_formatter_, disabled_metrics_); // JMW2
+}
+****** JMW3 reducer/write_metrics.h
+inline void write_metrics( // JMW3
+    ebpf_net::metrics::tcp_metrics const &m,
+    Publisher::WriterPtr const &writer,
+    TsdbFormatter &formatter,
+    const DisabledMetrics &disabled_metrics)
+{
+  ...
+  WRITE(TcpMetricInfo::bytes, m.sum_bytes);
+  ...
+  WRITE(TcpMetricInfo::resets, m.tcp_resets);
+}
+******* JMW4 reducer/write_metrics.h
+#define WRITE(metric_info, value)
+  formatter.write(metric_info, value, writer); /* JMW4*/
+******** JMW5 reducer/tsdb_formatter.cc
+void TsdbFormatter::write(MetricInfo const &metric, value_t value, Publisher::WriterPtr const &writer)
+{
+  format( // JMW5
+      metric,
+      value,
+      aggregation_,
+      ...
+      writer);
+********* JMW6 reducer/otlp_grpc_formatter.cc
+void OtlpGrpcFormatter::format( // JMW6
+    MetricInfo const &metric_info,
+    value_t metric_value,
+    std::string_view aggregation,
+    ...
+    Publisher::WriterPtr const &unused_writer)
+{
+  ...
+  if (scope_metrics_->metrics_size() >= global_otlp_grpc_batch_size) {
+    send_metrics_request();
+  }
+}
+********** JMW7 reducer/otlp_grpc_formatter.cc
+void OtlpGrpcFormatter::send_metrics_request()
+{
+  ...
+  writer_->write(metrics_request_); // JMW7
+*********** JMW8 reducer/otlp_grpc_publisher.cc
+void OtlpGrpcPublisher::Writer::write(ExportMetricsServiceRequest &request)
+{
+  metrics_client_.AsyncExport(request); // JMW8
+}
+************ JMW9 otlp/otlp_grpc_client.h
+virtual void AsyncExport(TReq const &request) // JMW9
+{}

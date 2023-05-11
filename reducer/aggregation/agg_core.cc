@@ -156,6 +156,7 @@ void AggCore::write_standard_metrics(u64 t)
                                                                                                                                \
   index_.az_az.A_B##_foreach(t, az_az_writer);
 
+  // JMW0
   WRITE_METRICS(tcp_a_to_b, tcp_b_to_a);
   WRITE_METRICS(udp_a_to_b, udp_b_to_a);
   WRITE_METRICS(http_a_to_b, http_b_to_a);

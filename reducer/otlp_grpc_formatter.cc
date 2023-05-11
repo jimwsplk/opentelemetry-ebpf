@@ -54,7 +54,7 @@ OtlpGrpcFormatter::~OtlpGrpcFormatter()
   flush();
 }
 
-void OtlpGrpcFormatter::format(
+void OtlpGrpcFormatter::format( // JMW6
     MetricInfo const &metric_info,
     value_t metric_value,
     std::string_view aggregation,
@@ -201,7 +201,7 @@ void OtlpGrpcFormatter::send_metrics_request()
         "JSON view of ExportMetricsServiceRequest being sent: {}", log_waive(otlp_client::get_request_json(metrics_request_)));
 #endif
 
-    writer_->write(metrics_request_);
+    writer_->write(metrics_request_); // JMW7
 
     // clear the metrics portion of metrics_request_, leaving the common portions to reuse
     scope_metrics_->clear_metrics();

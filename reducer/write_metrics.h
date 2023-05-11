@@ -18,7 +18,7 @@ namespace reducer {
 
 #define WRITE(metric_info, value)                                                                                              \
   if (!disabled_metrics.is_metric_disabled(metric_info.metric)) {                                                              \
-    formatter.write(metric_info, value, writer);                                                                               \
+    formatter.write(metric_info, value, writer); /* JMW4*/                                                                     \
   }
 
 inline double divide(double dividend, u32 divisor)
@@ -26,7 +26,7 @@ inline double divide(double dividend, u32 divisor)
   return divisor ? dividend / divisor : 0.0;
 }
 
-inline void write_metrics(
+inline void write_metrics( // JMW3
     ebpf_net::metrics::tcp_metrics const &m,
     Publisher::WriterPtr const &writer,
     TsdbFormatter &formatter,

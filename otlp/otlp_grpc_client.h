@@ -52,7 +52,7 @@ public:
     return stub_->Export(&context, request, &response);
   }
 
-  virtual void AsyncExport(TReq const &request)
+  virtual void AsyncExport(TReq const &request) // JMW9
   {
     SCOPED_TIMING(OtlpGrpcClientAsyncExport);
 
