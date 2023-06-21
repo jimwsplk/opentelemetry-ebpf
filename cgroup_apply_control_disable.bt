@@ -1,0 +1,53 @@
+#include <linux/cgroup-defs.h>
+
+/*
+	{
+		.name = "cgroup.subtree_control",
+		.flags = CFTYPE_NS_DELEGATABLE,
+		.seq_show = cgroup_subtree_control_show,
+		.write = cgroup_subtree_control_write,
+	},
+*/
+
+kprobe:cgroup_subtree_control_write
+{
+  printf("%lld: %s()\n", nsecs, func);
+}
+
+kprobe:cgroup_apply_control_enable
+{
+  printf("%lld: %s()\tssid=%d  \tcgroup=0x%llx\n", nsecs, func, ((struct cgroup *)arg0)->self.ss->id, arg0);
+}
+
+
+kprobe:cgroup_subtree_control_write
+{
+  printf("%lld: %s()\tssid=%d  \tcgroup=0x%llx\n", nsecs, func, ((struct cgroup *)arg0)->self.ss->id, arg0);
+}
+
+kprobe:cgroup_finalize_control
+{
+  printf("%lld: %s()\tssid=%d  \tcgroup=0x%llx\n", nsecs, func, ((struct cgroup *)arg0)->self.ss->id, arg0);
+}
+
+/**
+ * cgroup_enable_threaded - make @cgrp threaded
+ * @cgrp: the target cgroup
+ *
+ * Called when "threaded" is written to the cgroup.type interface file and
+ * tries to make @cgrp threaded and join the parent's resource domain.
+ * This function is never called on the root cgroup as cgroup.type doesn't
+ * exist on it.
+ */
+/* cannot attach kprobe, probe entry may not exist
+kprobe:cgroup_enable_threaded
+{
+  printf("%lld: %s()\tssid=%d  \tcgroup=0x%llx\n", nsecs, func, ((struct cgroup *)arg0)->self.ss->id, arg0);
+}
+*/
+
+kprobe:cgroup_apply_control_disable
+{
+  printf("%lld: %s()\tssid=%d  \tcgroup=0x%llx\n", nsecs, func, ((struct cgroup *)arg0)->self.ss->id, arg0);
+}
+
