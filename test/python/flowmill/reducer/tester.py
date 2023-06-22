@@ -6,7 +6,7 @@ from flowmill.otlp_to_prom.otlp_to_prom import otlp_to_prom
 from flowmill.core import default_debug_setting
 from flowmill.docker import docker_client, docker_container_spec
 from flowmill.object import make_object_from_dictionary
-from flowmill.collector.kernel import kernel_collector
+from flowmill.kernel_collector_simulator.kernel_collector_simulator import kernel_collector_simulator
 
 import time
 import requests
@@ -24,7 +24,7 @@ class otlp_reducer_tester:
         self.scheduled = []
         self.otlp_to_prom = None
         self.reducer = None
-        self.kernel_collector = None
+        self.kernel_collector_simulator = None
 
     def run(self, reducer_args=[], collector_args=[]):
         """
@@ -57,16 +57,12 @@ class otlp_reducer_tester:
             args=reducer_args
         )
 
-        print("starting kernel_collector...")
-        self.kernel_collector = kernel_collector(
+        print("starting kernel_collector_simulator...")
+        self.kernel_collector_simulator = kernel_collector_simulator(
             docker=self.docker,
             debug=self.debug,
             intake_host = 'localhost',
-            intake_port = intake_port,
-            intake_name = 'intake',
-            disable_tls = True,
-            disable_authz = True,
-            args=collector_args
+            intake_port = intake_port
         )
 
         time.sleep(120)
@@ -85,11 +81,11 @@ class otlp_reducer_tester:
         }
 
         self.reducer.stop()
-        self.kernel_collector.stop()
+        self.kernel_collector_simulator.stop()
         self.otlp_to_prom.stop()
     
         self.reducer = None
-        self.kernel_collector = None
+        self.kernel_collector_simulator = None
         self.otlp_to_prom = None
 
         return make_object_from_dictionary(result)
@@ -100,7 +96,7 @@ class otlp_reducer_tester:
     def __exit__(self, type, value, traceback):
         if self.reducer is not None:
             self.reducer.stop()
-        if self.kernel_collector is not None:
-            self.kernel_collector.stop()
+        if self.kernel_collector_simulator is not None:
+            self.kernel_collector_simulator.stop()
         if self.otlp_to_prom is not None:
             self.otlp_to_prom.stop()

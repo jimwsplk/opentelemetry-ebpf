@@ -39,6 +39,7 @@ class reducer:
         args = reducer.DEFAULT_ARGS + args
         args.append('--port={}'.format(intake_port))
         args.append('--internal-prom=0.0.0.0:{}'.format(internal_prom_port))
+        args.append('--disable-metrics=ebpf_net.all')
 
         if enable_prom_metrics:
             args.append('--prom=0.0.0.0:{}'.format(prom_port))
@@ -47,6 +48,7 @@ class reducer:
 
         if enable_otlp_grpc_metrics:
             args.append('--enable-otlp-grpc-metrics')
+            
             args.append('--otlp-grpc-metrics-host={}'.format(otlp_grpc_metrics_host))
             args.append('--otlp-grpc-metrics-port={}'.format(otlp_grpc_metrics_port))
 

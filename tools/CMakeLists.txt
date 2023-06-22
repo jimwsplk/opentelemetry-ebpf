@@ -56,4 +56,7 @@ add_tool_executable(
     wire_msg_to_json
 )
 
+add_subdirectory(kernel-collector-simulator)
 add_subdirectory(otlp-to-prom)
+add_subdirectory(reducer-simulator)
+

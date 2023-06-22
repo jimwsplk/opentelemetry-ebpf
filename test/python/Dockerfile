@@ -10,7 +10,7 @@ ENTRYPOINT [ "/srv/entrypoint.sh" ]
 ARG PKG_CORE="docker.io python3"
 RUN apt-get update && apt-get install -y --no-install-recommends $PKG_CORE
 
-ARG PKG_PYTHON="python3-pip python3-bcrypt python3-pytest"
+ARG PKG_PYTHON="python3-pip python3-bcrypt python3-pytest python3-setuptools"
 RUN apt-get update && apt-get install -y --no-install-recommends $PKG_PYTHON
 
 ARG PYTHON_LIBS="ijson docker"

@@ -27,6 +27,7 @@ files=( \
   k8s
   k8s-collector.sh
   kernel-collector.sh
+  kernel-collector-simulator.sh
   otelcol-gateway.sh
   reducer.sh
   test-kernel-collector.sh

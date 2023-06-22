@@ -1,0 +1,12 @@
+--- tools/CMakeLists.txt
++++ tools/CMakeLists.txt
+@@ -58,7 +58,8 @@ add_tool_executable(
+ )
+ 
+ add_subdirectory(experiments)
+-add_subdirectory(simulator)
++add_subdirectory(reducer-simulator)
++add_subdirectory(kernel-collector-simulator)
+ add_subdirectory(traffic-generator)
+ add_subdirectory(otlp-to-prom)
+ 
